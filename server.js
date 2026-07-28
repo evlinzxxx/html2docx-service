@@ -107,7 +107,6 @@ async function inlineRemoteImages(html) {
   let result = html;
   for (const { url, dataUri } of replacements) {
     if (dataUri) {
-      // escape special regex chars in the URL before building the replacer
       const escaped = url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       result = result.replace(new RegExp(escaped, 'g'), dataUri);
     }
@@ -116,9 +115,6 @@ async function inlineRemoteImages(html) {
 }
 
 // --- main conversion endpoint ---
-// POST /convert
-// body: { html: "<h1>...</h1>", filename: "output.docx", options: { ... } }
-// returns: binary .docx file
 app.post('/convert', async (req, res) => {
   try {
     const { html, filename, options } = req.body || {};
@@ -131,28 +127,30 @@ app.post('/convert', async (req, res) => {
     const processedHtml = await inlineRemoteImages(htmlWithInlineStyles);
 
     const docxOptions = {
-    footer: false,
-    pageNumber: false,
+      footer: false,
+      pageNumber: false,
 
-    page: {
-      margin: {
+      // NOTE: this must be a TOP-LEVEL "margins" key (not nested under "page").
+      // The library silently ignores unrecognized keys, so a wrong nesting
+      // here falls back to the library's wide defaults (1.25in sides).
+      margins: {
         top: 720,
-        right: 360,
+        right: 720,
         bottom: 720,
-        left: 360,
+        left: 720,
       },
-    },
 
-    table: {
-      row: { cantSplit: true },
-      borderOptions: {
-        stroke: 'single',
-        size: 4,
-        color: '000000',
+      table: {
+        row: { cantSplit: true },
+        borderOptions: {
+          stroke: 'single',
+          size: 4,
+          color: '000000',
+        },
+        addSpacingAfter: false,
       },
-      addSpacingAfter: false,
-    },
-  };
+      ...(options || {}),
+    };
 
     const fileBuffer = await HTMLtoDOCX(processedHtml, null, docxOptions);
 
