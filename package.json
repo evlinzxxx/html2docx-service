@@ -9,6 +9,7 @@
   "license": "MIT",
   "dependencies": {
     "@turbodocx/html-to-docx": "^1.22.0",
+    "cheerio": "^1.2.0",
     "express": "^5.2.1",
     "node-fetch": "^2.7.0"
   }

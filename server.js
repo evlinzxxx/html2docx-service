@@ -1,6 +1,7 @@
 const express = require('express');
 const HTMLtoDOCX = require('@turbodocx/html-to-docx');
 const fetch = require('node-fetch');
+const cheerio = require('cheerio');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -16,6 +17,45 @@ app.use((req, res, next) => {
   if (key !== API_KEY) return res.status(401).json({ error: 'Unauthorized: invalid or missing x-api-key header' });
   next();
 });
+
+// --- resolve <style> block CSS (and default <th> bold behavior) into inline
+// style="" attributes, since the docx converter only reads inline styles ---
+function resolveStylesToInline(html) {
+  const $ = cheerio.load(html, { decodeEntities: false });
+
+  // Browsers bold <th> by default even with no CSS; the converter doesn't
+  // replicate that default, so we seed it here (lowest priority).
+  $('th').each((i, el) => {
+    const existing = $(el).attr('style') || '';
+    $(el).attr('style', `font-weight: bold; ${existing}`);
+  });
+
+  // Apply simple flat <style> block rules (tag/class selectors, comma lists).
+  // Declarations are placed BEFORE each element's current style so that
+  // any pre-existing inline style (higher priority) still wins on conflicts.
+  $('style').each((i, styleEl) => {
+    const css = $(styleEl).html() || '';
+    const ruleRegex = /([^{}]+)\{([^{}]+)\}/g;
+    let match;
+    while ((match = ruleRegex.exec(css)) !== null) {
+      const selectors = match[1].split(',').map((s) => s.trim()).filter(Boolean);
+      const declarations = match[2].trim().replace(/;\s*$/, '');
+      selectors.forEach((selector) => {
+        try {
+          $(selector).each((j, el) => {
+            const existing = $(el).attr('style') || '';
+            $(el).attr('style', `${declarations}; ${existing}`);
+          });
+        } catch (e) {
+          // invalid/unsupported selector - skip it
+        }
+      });
+    }
+  });
+
+  $('style').remove();
+  return $.html();
+}
 
 // --- health check ---
 app.get('/health', (req, res) => {
@@ -77,7 +117,8 @@ app.post('/convert', async (req, res) => {
       return res.status(400).json({ error: 'Field "html" (string) is required in the JSON body' });
     }
 
-    const processedHtml = await inlineRemoteImages(html);
+    const htmlWithInlineStyles = resolveStylesToInline(html);
+    const processedHtml = await inlineRemoteImages(htmlWithInlineStyles);
 
     const docxOptions = {
       footer: false,
