@@ -53,6 +53,16 @@ function resolveStylesToInline(html) {
     }
   });
 
+  // Cap image size for any <img> that doesn't already specify a width -
+  // full-resolution screenshots otherwise embed at native pixel size and
+  // overflow table cells / pages.
+  $('img').each((i, el) => {
+    const $el = $(el);
+    if (!$el.attr('width')) {
+      $el.attr('width', '350');
+    }
+  });
+
   $('style').remove();
   return $.html();
 }
@@ -127,6 +137,7 @@ app.post('/convert', async (req, res) => {
       table: {
         row: { cantSplit: true },
         borderOptions: { stroke: 'single', size: 4, color: '000000' },
+        addSpacingAfter: false,
         ...(options && options.table ? options.table : {}),
       },
     };
