@@ -80,10 +80,14 @@ app.post('/convert', async (req, res) => {
     const processedHtml = await inlineRemoteImages(html);
 
     const docxOptions = {
-      table: { row: { cantSplit: true } },
       footer: false,
       pageNumber: false,
       ...(options || {}),
+      table: {
+        row: { cantSplit: true },
+        borderOptions: { size: 1, color: '000000' },
+        ...(options && options.table ? options.table : {}),
+      },
     };
 
     const fileBuffer = await HTMLtoDOCX(processedHtml, null, docxOptions);
