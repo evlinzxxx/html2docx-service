@@ -1,0 +1,15 @@
+{
+  "name": "html2docx-service",
+  "version": "1.0.0",
+  "description": "Layanan mikro gratis untuk konversi HTML (teks + gambar) ke DOCX, dipakai lewat HTTP Request node di n8n",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@turbodocx/html-to-docx": "^1.22.0",
+    "express": "^5.2.1",
+    "node-fetch": "^2.7.0"
+  }
+}
