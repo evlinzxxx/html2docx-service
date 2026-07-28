@@ -85,7 +85,7 @@ app.post('/convert', async (req, res) => {
       ...(options || {}),
       table: {
         row: { cantSplit: true },
-        borderOptions: { size: 1, color: '000000' },
+        borderOptions: { stroke: 'single', size: 4, color: '000000' },
         ...(options && options.table ? options.table : {}),
       },
     };
