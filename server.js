@@ -131,16 +131,28 @@ app.post('/convert', async (req, res) => {
     const processedHtml = await inlineRemoteImages(htmlWithInlineStyles);
 
     const docxOptions = {
-      footer: false,
-      pageNumber: false,
-      ...(options || {}),
-      table: {
-        row: { cantSplit: true },
-        borderOptions: { stroke: 'single', size: 4, color: '000000' },
-        addSpacingAfter: false,
-        ...(options && options.table ? options.table : {}),
+    footer: false,
+    pageNumber: false,
+
+    page: {
+      margin: {
+        top: 720,
+        right: 360,
+        bottom: 720,
+        left: 360,
       },
-    };
+    },
+
+    table: {
+      row: { cantSplit: true },
+      borderOptions: {
+        stroke: 'single',
+        size: 4,
+        color: '000000',
+      },
+      addSpacingAfter: false,
+    },
+  };
 
     const fileBuffer = await HTMLtoDOCX(processedHtml, null, docxOptions);
 
